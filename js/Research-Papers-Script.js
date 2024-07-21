@@ -1,26 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-auth.js";
 import {
   getDatabase,
   ref,
   get,
-  set,
-  child,
-  push,
-  onValue,
-  query,
-  orderByChild,
-  update,
-  remove,
 } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
-import {
-  getStorage,
-  ref as storageRef,
-  getDownloadURL,
-  listAll,
-  deleteObject,
-  uploadBytes,
-} from "https://www.gstatic.com/firebasejs/10.11.1/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAPgWFqszS_2o_40rIUbZhSDPgsxl3u5n0",
@@ -33,9 +16,9 @@ const firebaseConfig = {
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
-const auth = getAuth(firebaseApp);
+// const auth = getAuth(firebaseApp);
 const database = getDatabase();
-const storage = getStorage(firebaseApp);
+// const storage = getStorage(firebaseApp);
 
 const papersMainContainer = document.querySelector(".papers-container");
 const mainContainer = document.querySelector(".main-container");
@@ -64,12 +47,9 @@ async function displayNewsContent(page = 1) {
     return;
   }
 
-  const papersArray = Object.keys(snapshotData).map((key) => ({
-    id: key,
-    data: snapshotData[key],
-  }));
+  const papersArray = Object.values(snapshotData);
 
-  papersArray.sort((a, b) => new Date(b.data.date) - new Date(a.data.date));
+  papersArray.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const totalPages = Math.ceil(papersArray.length / itemsPerPage);
   const startIndex = (page - 1) * itemsPerPage;
@@ -77,7 +57,7 @@ async function displayNewsContent(page = 1) {
 
   const paginatedNews = papersArray.slice(startIndex, endIndex);
 
-  paginatedNews.forEach(({ id, data }) => {
+  paginatedNews.forEach((data) => {
     const papersContent = document.createElement("div");
     papersContent.classList.add("papers-content");
 
@@ -94,7 +74,7 @@ async function displayNewsContent(page = 1) {
 
     const btnDownload = document.createElement("button");
     btnDownload.classList.add("btn-download");
-    btnDownload.textContent = "Download PDF";
+    btnDownload.textContent = "Open PDF";
 
     papersContent.appendChild(h1);
     papersContent.appendChild(author);
@@ -103,26 +83,14 @@ async function displayNewsContent(page = 1) {
 
     papersMainContainer.appendChild(papersContent);
 
-    btnDownload.addEventListener("click", async () => {
-      try {
-        const papersFileRef = storageRef(
-          storage,
-          `researchPapers/${id}/${data.fileName}`
-        );
-
-        const fileUrl = await getDownloadURL(papersFileRef);
-        const response = await fetch(fileUrl);
-        const blob = await response.blob();
-
-        const downloadLink = document.createElement("a");
-        downloadLink.href = URL.createObjectURL(blob);
-        downloadLink.download = data.fileName; // Specify the file name to be downloaded
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-      } catch (error) {
-        console.error("Failed to download file:", error);
-      }
+    btnDownload.addEventListener("click", () => {
+      const downloadLink = document.createElement("a");
+      downloadLink.href = data.fileURL;
+      downloadLink.target = "_blank";
+      downloadLink.download = data.fileName;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
     });
   });
 
